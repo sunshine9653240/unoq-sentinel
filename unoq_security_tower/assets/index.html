@@ -1,0 +1,148 @@
+﻿<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>UNO Q Sentinel</title>
+  <link rel="stylesheet" href="style.css?v=4">
+  <script src="libs/socket.io.min.js"></script>
+  <script src="libs/arduino.js"></script>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">◈</div>
+        <div>
+          <div class="brand-kicker">ARDUINO UNO Q · SECURITY NODE</div>
+          <h1>UNO Q <span>Sentinel</span></h1>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <div class="live-pill"><span class="dot"></span><span id="connectionText">連線中</span></div>
+        <div class="clock" id="clock">--:--:--</div>
+      </div>
+    </header>
+
+    <main>
+      <section class="column main-column">
+        <div class="panel threat-panel" id="threatPanel">
+          <div class="panel-heading">
+            <span class="eyebrow">REAL-TIME THREAT LEVEL</span>
+            <span class="mini-status" id="lastEvent">尚無事件</span>
+          </div>
+          <div class="threat-main">
+            <div class="shield" id="shield">🛡️</div>
+            <div class="threat-copy">
+              <div class="threat-level" id="threatLevel">LOW</div>
+              <div class="threat-label" id="threatLabel">系統正常，持續監看中</div>
+            </div>
+            <div class="score-wrap">
+              <div class="score" id="score">0</div>
+              <div class="score-label">RISK SCORE / 100</div>
+            </div>
+          </div>
+          <div class="score-track"><div class="score-fill" id="scoreBar"></div></div>
+          <div class="reason-list" id="reasonList"></div>
+          <div class="threat-footer">
+            <div><span class="muted">收到事件</span> <strong id="eventCount">0</strong></div>
+            <div><span class="muted">最近 30 秒</span> <strong id="recentCount">0</strong></div>
+            <div><span class="muted">運行時間</span> <strong id="uptime">0m</strong></div>
+          </div>
+        </div>
+
+        <div class="panel events-panel">
+          <div class="panel-heading">
+            <div>
+              <span class="eyebrow">NETWORK EVENT STREAM</span>
+              <h2>事件時間線</h2>
+            </div>
+            <button class="ghost-button" id="resetBtn">清除事件</button>
+          </div>
+          <div class="event-list" id="eventList">
+            <div class="empty-state">等待 honeypot 或外部事件...</div>
+          </div>
+        </div>
+      </section>
+
+      <aside class="column side-column">
+        <div class="panel analyst-panel">
+          <div class="panel-heading">
+            <div>
+              <span class="eyebrow">ON-DEVICE INTELLIGENCE</span>
+              <h2>AI 分析師</h2>
+            </div>
+            <span class="status-chip" id="llmStatus">待機</span>
+          </div>
+          <div class="analyst-text" id="llmText">LLM 尚未分析事件。</div>
+          <button class="primary-button" id="analyzeBtn">立即分析事件</button>
+          <div class="tiny-note">Qwen3.5 0.8B · 在 UNO Q 上離線推論</div>
+        </div>
+
+        <div class="panel honeypot-panel">
+          <div class="panel-heading">
+            <div>
+              <span class="eyebrow">DECOY SURFACE</span>
+              <h2>Honeypot 服務</h2>
+            </div>
+            <span class="status-chip ok">LISTENING</span>
+          </div>
+          <div class="port-grid" id="portGrid"></div>
+          <div class="tiny-note">這不是服務中斷：這些是故意開放的假服務。</div>
+        </div>
+
+        <div class="panel notify-panel">
+          <div class="panel-heading">
+            <div>
+              <span class="eyebrow">PHONE ALERTS · NTFY</span>
+              <h2>手機訂閱</h2>
+            </div>
+            <span class="status-chip" id="notifyStatus">未測試</span>
+          </div>
+          <div class="topic-line">TOPIC</div>
+          <div class="topic-value" id="ntfyTopic">載入中...</div>
+          <a class="topic-link" id="ntfyLink" href="#" target="_blank" rel="noreferrer">開啟 ntfy 訂閱連結 →</a>
+          <p class="subscribe-copy">手機安裝 ntfy，訂閱上方的 topic。偵測到高風險事件時，UNO Q 會直接推播到手機；不需要開著 Dashboard。</p>
+          <div class="button-row">
+            <button class="secondary-button" id="testNotify">測試推播</button>
+          </div>
+          <div class="button-row demo-row">
+            <button class="secondary-button" id="simulateMediumBtn">模擬中風險</button>
+            <button class="secondary-button danger" id="simulateBtn">模擬高風險</button>
+          </div>
+          <div class="button-row demo-row">
+            <button class="secondary-button" id="simulateFloodBtn">模擬單端口洪水</button>
+          </div>
+          <details class="custom-test" open>
+            <summary>自訂測試組合</summary>
+            <div class="custom-label">目標端口</div>
+            <div class="port-choices" id="customPorts"></div>
+            <div class="custom-grid">
+              <label>每端口連線數
+                <input id="customConnections" type="number" min="1" max="20" value="1">
+              </label>
+              <label>垃圾資料 KB
+                <input id="customPayload" type="number" min="0" max="128" value="0">
+              </label>
+              <label>連線間隔 ms
+                <input id="customDelay" type="number" min="0" max="500" value="80">
+              </label>
+            </div>
+            <label class="check-line"><input id="customMalicious" type="checkbox"> 加入惡意 HTTP 路徑</label>
+            <button class="secondary-button custom-run" id="runCustom">執行自訂測試</button>
+            <div class="custom-status" id="customStatus">選擇端口與參數後執行</div>
+          </details>
+        </div>
+      </aside>
+    </main>
+
+    <footer class="footer">
+      <span>UNO Q SENTINEL · local-first honeypot & physical alert node</span>
+      <span>被動範圍：送到本機的流量、廣播／多播、Honeypot 事件</span>
+    </footer>
+  </div>
+  <div class="toast" id="toast"></div>
+  <script src="app.js?v=5"></script>
+</body>
+</html>
+

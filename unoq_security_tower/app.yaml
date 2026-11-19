@@ -1,0 +1,18 @@
+﻿name: UNO Q Sentinel
+icon: "🛡️"
+description: AI honeypot and physical network threat monitor with local LLM, LED alerts, and ntfy phone notifications.
+ports:
+  - 2222
+  - 2323
+  - 8081
+  - 9000
+  - 9001
+  - 9002
+  - 9003
+  - 9004
+bricks:
+  - arduino:llm:
+      variables:
+        LLAMA_ARG_CTX_SIZE: "4096"
+  - arduino:web_ui
+

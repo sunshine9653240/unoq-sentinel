@@ -1,0 +1,21 @@
+﻿# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.log
+
+# Arduino App Lab generated runtime files
+.cache/
+*.egg-info/
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Local captures and secrets
+capture/*.pcap
+capture/*.pcapng
+.env
